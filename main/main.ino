@@ -144,6 +144,8 @@ int i = 0;
 
 int ball_y=128-ball_radius-hi;
 
+int change_i = 0;
+
 void platforms(int x, int y,int width, int height, uint16_t color){
   tft.fillRect(x,  y,  width,  height,color);
 }
@@ -159,9 +161,18 @@ void loop() {
     if(ball_x>128-ball_radius){
       ball_x=10;
     }
-    ball_x+=1;
-    i += 1;
-    // tft.fillCircle(ball_x,ball_y, ball_radius, BALL_COLOR);
+    ball_y+=1;
+    i += (change_i+20)%128;
+
+    if(ball_y>128-hi-80-i+ball_radius){
+      //This is to check if we need the motion or not
+      change_i = 1;
+    }else if (ball_y<128-hi-ball_radius){
+      change_i = 0;  
+    }
+    
+    tft.fillCircle(ball_x,ball_y, ball_radius, BALL_COLOR);
+    
     platforms(0,128-hi-i,wi,hi, PLATFORM_COLOR);
     platforms(128-wi,128-hi-40-i,wi,hi, PLATFORM_COLOR);
     platforms(0,128-hi-80-i,wi,hi, PLATFORM_COLOR);
@@ -174,7 +185,6 @@ void loop() {
     // ball_x+=1;
     // i += 1;
     // tft.fillCircle(ball_x,ball_y, ball_radius, BALL_COLOR);
-    ';'
     // platforms(0,128-hi,wi,hi, PLATFORM_COLOR);
     // platforms(128-wi,128-hi-40,wi,hi, PLATFORM_COLOR);
     // platforms(0,128-hi-80,wi,hi, PLATFORM_COLOR);
