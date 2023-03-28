@@ -6,7 +6,7 @@ float a_x, a_y, a_z; //g-value
 
 float thres = 1.00; //threshold
 
-float e = 0.1; //history factor
+float e = 0.2; //history factor
 
 void setup() {
   Serial.begin(9600); //begin console comms
@@ -46,10 +46,14 @@ void loop() {
   a_x = (a_x * e) + ((1-e) * (Wire.read()|Wire.read()<<8)/thres);
   a_y = (a_y * e) + ((1-e) * (Wire.read()|Wire.read()<<8)/thres);
   a_z = (a_z * e) + ((1-e) * (Wire.read()|Wire.read()<<8)/thres);
+  if(a_x > 80){
+    Serial.println("Left Jerk");
+    delay(500);
+  }
+  if(a_x < -80){
+    Serial.println("Right Jerk");
+    delay(500);
+  }
 
-  Serial.print(x);
-  Serial.print(" | ");
-  Serial.print(y);
-  Serial.print(" | ");
-  Serial.println(z);
+  delay(100);
 }
