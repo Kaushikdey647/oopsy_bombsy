@@ -57,14 +57,9 @@ public:
         accel_dat[0] = accel_dat[0]/threshold;
         accel_dat[1] = accel_dat[1]/threshold;
         accel_dat[2] = accel_dat[2]/threshold;
-        
-        
         accel_dat[0] = (accel_dat[0] * smoothening_factor) + ((1-smoothening_factor) * accel_dat[0]);
         accel_dat[1] = (accel_dat[1] * smoothening_factor) + ((1-smoothening_factor) * accel_dat[1]);
         accel_dat[2] = (accel_dat[2] * smoothening_factor) + ((1-smoothening_factor) * accel_dat[2]);
-
-        Serial.println(accel_dat[0]);
-
         return accel_dat;
     }
 

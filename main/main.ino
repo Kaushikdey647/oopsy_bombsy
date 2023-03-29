@@ -106,7 +106,6 @@ void render(){
   //fill circle
   tft.fillCircle(ball_x,ball_y, ball_radius, BALL_COLOR);
   delay(50);
-
 }
 
 void left_jerk(int ball_x,int ball_y,int ball_radius){
@@ -159,6 +158,7 @@ void loop() {
 //     char s[20];
 //     fprintf(s,"x: %f,y:%f, z:%f",accl_dat[0],accl_dat[1],accl_dat[2]);
 //     tft.print(s);
-     left_jerk(0,128-10,5);
-     delay(40);
+    // left_jerk(0,128-10,5);
+    render();
+    //  delay(40);
 }
