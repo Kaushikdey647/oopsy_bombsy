@@ -1,31 +1,31 @@
-#include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
-#include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
+#include <Adafruit_GFX.h>     // Core graphics library
+#include <Adafruit_ST7735.h>  // Hardware-specific library for ST7735
+#include <Adafruit_ST7789.h>  // Hardware-specific library for ST7789
 #include <SPI.h>
 #include "accel.h"
 
 #ifdef ADAFRUIT_HALLOWING
-  #define TFT_CS        39 // Hallowing display control pins: chip select
-  #define TFT_RST       37 // Display reset
-  #define TFT_DC        38 // Display data/command select
-  #define TFT_BACKLIGHT  7 // Display backlight pin
+#define TFT_CS 39        // Hallowing display control pins: chip select
+#define TFT_RST 37       // Display reset
+#define TFT_DC 38        // Display data/command select
+#define TFT_BACKLIGHT 7  // Display backlight pin
 
-#elif defined(ARDUINO_FEATHER_ESP32) // Feather Huzzah32
-  #define TFT_CS         14
-  #define TFT_RST        15
-  #define TFT_DC         32
+#elif defined(ARDUINO_FEATHER_ESP32)  // Feather Huzzah32
+#define TFT_CS 14
+#define TFT_RST 15
+#define TFT_DC 32
 
 #elif defined(ESP8266)
-  #define TFT_CS         4
-  #define TFT_RST        16                                            
-  #define TFT_DC         5
+#define TFT_CS 4
+#define TFT_RST 16
+#define TFT_DC 5
 
 #else
-  // For the breakout board, you can use any 2 or 3 pins.
-  // These pins will also work for the 1.8" TFT shield.
-  #define TFT_CS        10
-  #define TFT_RST        9 // Or set to -1 and connect to Arduino RESET pin
-  #define TFT_DC         8
+// For the breakout board, you can use any 2 or 3 pins.
+// These pins will also work for the 1.8" TFT shield.
+#define TFT_CS 10
+#define TFT_RST 9  // Or set to -1 and connect to Arduino RESET pin
+#define TFT_DC 8
 #endif
 
 
@@ -33,119 +33,271 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 const uint8_t Button_pin = 2;
 
 // color definitions
-const uint16_t  Display_Color_Black        = 0x0000;
-const uint16_t  Display_Color_Blue         = 0x001F;
-const uint16_t  Display_Color_Red          = 0xF800;
-const uint16_t  Display_Color_Green        = 0x07E0;
-const uint16_t  Display_Color_Cyan         = 0x07FF;
-const uint16_t  Display_Color_Magenta      = 0xF81F;
-const uint16_t  Display_Color_Yellow       = 0xFFE0;
-const uint16_t  Display_Color_White        = 0xFFFF;
+const uint16_t Display_Color_Black = 0x0000;
+const uint16_t Display_Color_Blue = 0x001F;
+const uint16_t Display_Color_Red = 0xF800;
+const uint16_t Display_Color_Green = 0x07E0;
+const uint16_t Display_Color_Cyan = 0x07FF;
+const uint16_t Display_Color_Magenta = 0xF81F;
+const uint16_t Display_Color_Yellow = 0xFFE0;
+const uint16_t Display_Color_White = 0xFFFF;
 
 #define PLATFORM_COLOR 0x07E0
 #define BG_COLOR 0x0000
 #define BALL_COLOR 0xF800
 
-class ball{
+// class frame {
+//   //class frames used for shifting the platforms and ball
+//   int flag_need_frame_shift;
+
+//   int check_frame_shift(ball b, platform p1, platform p2, platform p3) {
+
+//     if (b.get_pos()[1] >= p3.get_pos()[1]) {
+//       return 1;//start moving the frame
+//     } else if(b.get_pos()[1]>=p1.get_pos()[1]){
+//       return -1; //stop moving the frame
+//     }
+
+//     return 0; // continue with what is happening
+//   }
+// };
+
+
+class platform {
+  int* pos;
+  int* size;
+  int* vel;
+public:
+
+  void platform_init(int x, int y, int w, int h) {
+    pos = new int[2];
+    size = new int[2];
+    vel = new int[2];
+    pos[0] = x;
+    pos[1] = y;
+    size[0] = w;
+    size[1] = h;
+    vel[0] = -5;
+    vel[1] = -5;
+  }
+
+  int* get_pos() {
+    return pos;
+  }
+
+  int* get_size() {
+    return size;
+  }
+
+  void update_py() {
+
+    if (pos[1] < 20) {
+      pos[1] = 128;
+      pos[0] = random(0, 127);
+    }
+    pos[1] = (pos[1] + vel[1]);
+  }
+
+  void draw() {
+    tft.drawRect(pos[0], pos[1], size[0], size[1], PLATFORM_COLOR);
+  }
+
+  void erase() {
+    tft.drawRect(pos[0], pos[1], size[0], size[1], BG_COLOR);
+  }
+};
+
+class ball {
   int* pos;
   int radius;
   float* vel;
-  public:
-  ball(int x, int y, int rad){
+public:
+  void ball_init(int x, int y, int rad) {
     radius = rad;
     pos = new int[2];
     vel = new float[2];
     pos[0] = x;
     pos[1] = y;
+    vel[0] = 0.00;
+    vel[1] = 0.00;
+    Serial.print("[DEBUG]: Init Pos Values: ");
+    Serial.print(pos[0]);
+    Serial.print("|");
+    Serial.println(pos[1]);
   }
-  
-  int* get_pos(){
+
+  int* get_pos() {
     return pos;
   }
 
-  float* get_vel(){
+  float* get_vel() {
     return vel;
   }
 
-  void update_px(){
+  int get_radius() {
+    return radius;
+  }
+
+  void update_px() {
     //Bounce Conditions
-    if(( pos[0] <= 0 && vel[0] < 0 ) || ( pos[0] >= 127 && vel[0] > 0 )){
+    if ((pos[0] <= 0 && vel[0] < 0) || (pos[0] >= 127 && vel[0] > 0)) {
       vel[0] = -vel[0];
     }
     pos[0] += vel[0];
   }
-  
-  void update_py(){
+
+  void update_py() {
     //Bounce Conditions
-    if(( pos[0] <= 0 && vel[0] < 0 ) || ( pos[0] >= 127 && vel[0] > 0 )){
-      vel[0] = -vel[0];
+    if ((pos[1] <= 0 && vel[1] < 0) || (pos[1] >= 127 && vel[1] > 0)) {
+      vel[1] = -vel[1];
     }
     pos[1] += vel[1];
   }
 
-  void update_vx(float x_accel){
+  void update_vx(float x_accel) {
     vel[0] += x_accel;
   }
 
-  void update_vy(float y_accel){
+  void update_vy(float y_accel) {
     vel[1] += y_accel;
   }
 
-  void stop_x(){
+  void stop_x() {
     vel[0] = 0;
   }
 
-  void stop_y(){
+  void stop_y() {
     vel[1] = 0;
   }
 
-  void erase(){
+  void erase() {
     tft.fillCircle(pos[0], pos[1], radius, BG_COLOR);
   }
 
-  void draw(){
+  void draw() {
+    Serial.print("[DEBUG]: Draw Pos Values: ");
+    Serial.print(pos[0]);
+    Serial.print("|");
+    Serial.println(pos[1]);
+    Serial.print("[DEBUG]: Draw Vel Values: ");
+    Serial.print(vel[0]);
+    Serial.print("|");
+    Serial.println(vel[1]);
     tft.fillCircle(pos[0], pos[1], radius, BALL_COLOR);
   }
-  
 };
 
-ball b(64,64,4);
+ball b;
+platform p1;
+platform p2;
+platform p3;
 
 accel adxl345(0x53);
 
-float* store_accel = new float[3];
+bool collision(){
+  int* ball_pos, plat_pos, plat_size;  
+  ball_pos = b.get_pos();
+  int rad = b.get_radius();
 
-void render(){
-  store_accel = adxl345.read();
+  plat_pos = p1.get_pos();
+  plat_size = p1.get_size();
+  if( ball_pos[1]+rad == plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0]){
+    return true;
+  }
+
+  plat_pos = p2.get_pos();
+  plat_size = p2.get_size();
+  if( ball_pos[1]+rad == plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0]){
+    return true;
+  }
+
+  plat_pos = p3.get_pos();
+  plat_size = p3.get_size();
+  if( ball_pos[1]+rad == plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0]){
+    return true;
+  }
+
+  return false;
+}
+
+void render() {
+  store_accel = adxl345.read()[0];
+  // Serial.print("[DEBUG]: Accel Values: ");
+  // Serial.println(store_accel[0]);
+
+  bool col = collision();
   b.update_vx(store_accel[0]);
-  b.update_vy(store_accel[1]);
+  if(!col){
+    b.update_vy(store_accel[1]);
+  }
   b.erase();
   b.update_px();
-  b.update_py();
+  if(!col){
+    b.update_py();
+  }
   b.draw();
-  delay(75);
+  delay(100);
+}
+
+
+void moveup() {
+  b.stop_x();
+  b.stop_y();
+  b.update_vy(-5.0);
+  while (b.get_pos()[1] + b.get_radius() >= 46) {
+    p1.erase();
+    p2.erase();
+    p3.erase();
+    b.erase();
+    b.update_py();
+    p1.update_py();
+    p2.update_py();
+    p3.update_py();
+    b.draw();
+    p1.draw();
+    p2.draw();
+    p3.draw();
+    delay(100);
+  }
+  b.stop_x();
+  b.stop_y();
 }
 
 void setup() {
-    delay(250);
-    #ifdef ADAFRUIT_HALLOWING
-      tft.initR(INITR_HALLOWING);        // Initialize HalloWing-oriented screen
-      pinMode(TFT_BACKLIGHT, OUTPUT);
-      digitalWrite(TFT_BACKLIGHT, HIGH); // Backlight on
-    #else
-      tft.initR(INITR_144GREENTAB); // Init ST7735R chip, green tab
-    #endif
-    tft.fillScreen(BG_COLOR);
-    tft.setCursor(30, 0);
-    tft.setTextSize(1.1);
-    tft.print("Platformers");
-
-    Serial.begin(9600);
-    adxl345.setup(0.2, 1.00);
-    adxl345.calibrate();
+  Serial.begin(9600);
+#ifdef ADAFRUIT_HALLOWING
+  tft.initR(INITR_HALLOWING);  // Initialize HalloWing-oriented screen
+  pinMode(TFT_BACKLIGHT, OUTPUT);
+  digitalWrite(TFT_BACKLIGHT, HIGH);  // Backlight on
+#else
+  tft.initR(INITR_144GREENTAB);  // Init ST7735R chip, green tab
+#endif
+  tft.fillScreen(BG_COLOR);
+  tft.setCursor(30, 0);
+  tft.setTextSize(1.1);
+  tft.print("Platformers");
+  b.ball_init(64, 64, 4);
+  p3.platform_init(68, 126, 60, 2);
+  p2.platform_init(38, 86, 60, 2);
+  p1.platform_init(0, 46, 60, 2);
+  b.draw();
+  p1.draw();
+  p2.draw();
+  p3.draw();
+  adxl345.setup(0.2, 1.00);
+  adxl345.calibrate();
+  b.update_vx(0.00);
+  b.update_vy(2.00);
+  delay(2000);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  render();
+
+  if (b.get_pos()[1] + b.get_radius() >= 126) {
+    //This function is called me the ball reaches the bottom of the screen
+    moveup();
+  } else {
+    render();    
+  }
 }

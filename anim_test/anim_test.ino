@@ -162,7 +162,7 @@ void loop() {
       ball_x=10;
     }
     ball_y-=1;
-    i += (change_i+20)%128;
+    i = (i+change_i)%108+20;
 
     if(ball_y>128-hi-80-i+ball_radius){
       //This is to check if we need the motion or not
@@ -173,9 +173,9 @@ void loop() {
     
     tft.fillCircle(ball_x,ball_y, ball_radius, BALL_COLOR);
     
-    platforms(0,128-hi-i,wi,hi, PLATFORM_COLOR);
-    platforms(128-wi,128-hi-40-i,wi,hi, PLATFORM_COLOR);
-    platforms(0,128-hi-80-i,wi,hi, PLATFORM_COLOR);
+    platforms(0,(128-hi-i)%128,wi,hi, PLATFORM_COLOR);
+    platforms(128-wi,(128-hi-40-i)%128,wi,hi, PLATFORM_COLOR);
+    platforms(0,(128-hi-80-i)%128,wi,hi, PLATFORM_COLOR);
 
     // tft.setTextColor(Display_Color_Black);
     // tft.fillCircle(ball_x,ball_y, ball_radius, BG_COLOR);
@@ -188,5 +188,5 @@ void loop() {
     // platforms(0,128-hi,wi,hi, PLATFORM_COLOR);
     // platforms(128-wi,128-hi-40,wi,hi, PLATFORM_COLOR);
     // platforms(0,128-hi-80,wi,hi, PLATFORM_COLOR);
-    delay(200);
+    delay(40);
 }
