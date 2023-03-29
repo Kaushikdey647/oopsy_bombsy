@@ -92,7 +92,7 @@ public:
   void update_py() {
 
     if (pos[1] < 20) {
-      pos[1] = 128;
+      pos[1] = 116;
       pos[0] = random(0, 127);
     }
     pos[1] = (pos[1] + vel[1]);
@@ -175,53 +175,67 @@ public:
   }
 };
 
+
+// ------------------------------------------GLOBAL VARIABLE DECLARATION-------------------------------
 ball b;
 platform p1;
 platform p2;
 platform p3;
+int score = 0;
+int coll;
+char score_str[4] = { 0 };
 
 accel adxl345(0x53);
 
-bool collision(){
-  int* ball_pos, *ball_vel, *plat_pos, *plat_size;  
+int collision() {
+  int *ball_pos, *ball_vel, *plat_pos, *plat_size;
   ball_pos = b.get_pos();
   ball_vel = b.get_vel();
   int rad = b.get_radius();
 
   plat_pos = p1.get_pos();
   plat_size = p1.get_size();
-  if(( ball_pos[1]+rad <= plat_pos[1] )&&( ball_pos[1]+rad+ball_vel[1] >= plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0])){
+  int flag = 0;
+  if ((ball_pos[1] + rad <= plat_pos[1]) && (ball_pos[1] + rad + ball_vel[1] >= plat_pos[1]) && (ball_pos[0] + rad >= plat_pos[0]) && (ball_pos[0] - rad <= plat_pos[0] + plat_size[0])) {
     b.erase();
     b.stop_y();
-    b.update_vy( plat_pos[1] - ball_pos[1]-rad );
+    b.update_vy(plat_pos[1] - ball_pos[1] - rad);
     b.update_py();
     b.stop_y();
-    return true;
+    Serial.println("C1");
+    flag = 1;
   }
 
   plat_pos = p2.get_pos();
   plat_size = p2.get_size();
-  if(( ball_pos[1]+rad <= plat_pos[1] )&&( ball_pos[1]+rad+ball_vel[1] >= plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0])){
+  if ((ball_pos[1] + rad <= plat_pos[1]) && (ball_pos[1] + rad + ball_vel[1] >= plat_pos[1]) && (ball_pos[0] + rad >= plat_pos[0]) && (ball_pos[0] - rad <= plat_pos[0] + plat_size[0])) {
     b.erase();
     b.stop_y();
-    b.update_vy( plat_pos[1] - ball_pos[1]-rad );
+    b.update_vy(plat_pos[1] - ball_pos[1] - rad);
     b.update_py();
     b.stop_y();
-    return true;
+    Serial.println("C2");
+    flag = 2;
   }
 
   plat_pos = p3.get_pos();
   plat_size = p3.get_size();
-  if(( ball_pos[1]+rad <= plat_pos[1] )&&( ball_pos[1]+rad+ball_vel[1] >= plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0])){
+  if ((ball_pos[1] + rad <= plat_pos[1]) && (ball_pos[1] + rad + ball_vel[1] >= plat_pos[1]) && (ball_pos[0] + rad >= plat_pos[0]) && (ball_pos[0] - rad <= plat_pos[0] + plat_size[0])) {
     b.erase();
     b.stop_y();
-    b.update_vy( plat_pos[1] - ball_pos[1]-rad );
+    b.update_vy(plat_pos[1] - ball_pos[1] - rad);
     b.update_py();
     b.stop_y();
-    return true;
+    Serial.println("C3");
+    flag = 3;
   }
-
-  return false;
+  if (flag > 0 && coll == 0) {
+    coll = 1;
+    update_score();
+  } else if (flag == 0) {
+    coll = 0;
+  }
+  return flag;
 }
 
 float* store_accel;
@@ -232,7 +246,7 @@ void render() {
 
   bool col = collision();
   b.update_vx(store_accel[0]);
-  if(!col){
+  if (!col) {
 
     //TEMP
     b.update_vy(5);
@@ -241,7 +255,7 @@ void render() {
   }
   b.erase();
   b.update_px();
-  if(!col){
+  if (!col) {
     b.update_py();
   }
   b.draw();
@@ -253,7 +267,7 @@ void moveup() {
   b.stop_x();
   b.stop_y();
   b.update_vy(-5.0);
-  while (b.get_pos()[1] + b.get_radius() >= 46) {
+  while (b.get_pos()[1] + b.get_radius() >= 42) {
     p1.erase();
     p2.erase();
     p3.erase();
@@ -270,6 +284,67 @@ void moveup() {
   }
   b.stop_y();
   b.update_vy(2.00);
+
+  platform temp_p;
+  temp_p = p2;
+  p2 = p1;
+  p1 = p3;
+  p3 = temp_p;
+}
+
+void game_over() {
+
+  tft.fillScreen(BG_COLOR);
+  tft.setCursor(60, 60);
+  tft.setTextSize(2);
+  tft.print("GAME OVER");
+
+  delay(3000);
+
+  tft.fillScreen(BG_COLOR);
+  tft.setCursor(30, 0);
+  tft.setTextSize(1.1);
+  tft.print("Platformers");
+  b.ball_init(10, 0, 4);
+  p3.platform_init(68, 116, 60, 2);
+  p2.platform_init(38, 83, 60, 2);
+  p1.platform_init(0, 42, 60, 2);
+  b.draw();
+  p1.draw();
+  p2.draw();
+  p3.draw();
+
+  score = 0;
+  tft.setCursor(70, 120);
+  tft.setTextSize(0.3);
+  tft.print("Score: ");
+  sprintf(score_str, "%d", score);
+  tft.print(score_str);
+  coll = 0;
+
+  adxl345.setup(0.2, 1.00);
+  adxl345.calibrate();
+  b.update_vx(0.00);
+  b.update_vy(2.00);
+  delay(2000);
+}
+
+void update_score() {
+  tft.setCursor(70, 120);
+  tft.setTextColor(BG_COLOR);
+  tft.setTextSize(0.3);
+  tft.print("Score: ");
+  sprintf(score_str, "%d", score);
+  tft.print(score_str);
+
+  score++;
+
+  tft.setCursor(70, 120);
+  tft.setTextColor(Display_Color_White);
+  tft.setTextSize(0.3);
+  tft.print("Score: ");
+  sprintf(score_str, "%d", score);
+  tft.print(score_str);
 }
 
 void setup() {
@@ -283,31 +358,48 @@ void setup() {
   tft.initR(INITR_144GREENTAB);  // Init ST7735R chip, green tab
 #endif
   tft.fillScreen(BG_COLOR);
-  tft.setCursor(30, 0);
+  tft.setCursor(40, 0);
   tft.setTextSize(1.1);
   tft.print("Platformers");
+
+  score = 0;
+  tft.setCursor(70, 120);
+  tft.setTextSize(0.3);
+  tft.print("Score: ");
+  sprintf(score_str, "%d", score);
+  tft.print(score_str);
+  coll = 0;
+
   b.ball_init(10, 0, 4);
-  p3.platform_init(68, 126, 60, 2);
-  p2.platform_init(38, 86, 60, 2);
-  p1.platform_init(0, 46, 60, 2);
+  p3.platform_init(68, 116, 60, 2);
+  p2.platform_init(38, 83, 60, 2);
+  p1.platform_init(0, 42, 60, 2);
   b.draw();
   p1.draw();
   p2.draw();
   p3.draw();
   adxl345.setup(0.2, 1.00);
   adxl345.calibrate();
-  b.update_vx(0.00);
+  b.update_vx(1.00);
   b.update_vy(2.00);
   delay(2000);
 }
+// SETUP FUNCTION ENDS HERE
 
 void loop() {
   // put your main code here, to run repeatedly:
-
-  if (b.get_pos()[1] + b.get_radius() >= 126) {
+  int get_col = collision();
+  // Serial.println("%d", get_col);
+  if (get_col == 3) {
     //This function is called me the ball reaches the bottom of the screen
     moveup();
-  } else {
-    render();    
+  } 
+  // else if (b.get_pos()[1] + b.get_radius() > 125) {
+  //   game_over();
+  // } 
+  else {
+    render();
   }
+  // b.update_vx(1);
+  // b.update_vy(2);
 }
