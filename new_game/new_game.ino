@@ -110,27 +110,23 @@ public:
 class ball {
   int* pos;
   int radius;
-  float* vel;
+  int* vel;
 public:
   void ball_init(int x, int y, int rad) {
     radius = rad;
     pos = new int[2];
-    vel = new float[2];
+    vel = new int[2];
     pos[0] = x;
     pos[1] = y;
     vel[0] = 0.00;
     vel[1] = 0.00;
-    Serial.print("[DEBUG]: Init Pos Values: ");
-    Serial.print(pos[0]);
-    Serial.print("|");
-    Serial.println(pos[1]);
   }
 
   int* get_pos() {
     return pos;
   }
 
-  float* get_vel() {
+  int* get_vel() {
     return vel;
   }
 
@@ -154,11 +150,11 @@ public:
     pos[1] += vel[1];
   }
 
-  void update_vx(float x_accel) {
+  void update_vx(int x_accel) {
     vel[0] += x_accel;
   }
 
-  void update_vy(float y_accel) {
+  void update_vy(int y_accel) {
     vel[1] += y_accel;
   }
 
@@ -175,14 +171,6 @@ public:
   }
 
   void draw() {
-    Serial.print("[DEBUG]: Draw Pos Values: ");
-    Serial.print(pos[0]);
-    Serial.print("|");
-    Serial.println(pos[1]);
-    Serial.print("[DEBUG]: Draw Vel Values: ");
-    Serial.print(vel[0]);
-    Serial.print("|");
-    Serial.println(vel[1]);
     tft.fillCircle(pos[0], pos[1], radius, BALL_COLOR);
   }
 };
@@ -195,40 +183,61 @@ platform p3;
 accel adxl345(0x53);
 
 bool collision(){
-  int* ball_pos, plat_pos, plat_size;  
+  int* ball_pos, *ball_vel, *plat_pos, *plat_size;  
   ball_pos = b.get_pos();
+  ball_vel = b.get_vel();
   int rad = b.get_radius();
 
   plat_pos = p1.get_pos();
   plat_size = p1.get_size();
-  if( ball_pos[1]+rad == plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0]){
+  if(( ball_pos[1]+rad <= plat_pos[1] )&&( ball_pos[1]+rad+ball_vel[1] >= plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0])){
+    b.erase();
+    b.stop_y();
+    b.update_vy( plat_pos[1] - ball_pos[1]-rad );
+    b.update_py();
+    b.stop_y();
     return true;
   }
 
   plat_pos = p2.get_pos();
   plat_size = p2.get_size();
-  if( ball_pos[1]+rad == plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0]){
+  if(( ball_pos[1]+rad <= plat_pos[1] )&&( ball_pos[1]+rad+ball_vel[1] >= plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0])){
+    b.erase();
+    b.stop_y();
+    b.update_vy( plat_pos[1] - ball_pos[1]-rad );
+    b.update_py();
+    b.stop_y();
     return true;
   }
 
   plat_pos = p3.get_pos();
   plat_size = p3.get_size();
-  if( ball_pos[1]+rad == plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0]){
+  if(( ball_pos[1]+rad <= plat_pos[1] )&&( ball_pos[1]+rad+ball_vel[1] >= plat_pos[1] )&&( ball_pos[0]+rad >= plat_pos[0] ) && (ball_pos[0]-rad <= plat_pos[0]+plat_size[0])){
+    b.erase();
+    b.stop_y();
+    b.update_vy( plat_pos[1] - ball_pos[1]-rad );
+    b.update_py();
+    b.stop_y();
     return true;
   }
 
   return false;
 }
 
+float* store_accel;
+
 void render() {
-  store_accel = adxl345.read()[0];
-  // Serial.print("[DEBUG]: Accel Values: ");
-  // Serial.println(store_accel[0]);
+  store_accel = adxl345.read();
+  Serial.println(store_accel[0]);
 
   bool col = collision();
   b.update_vx(store_accel[0]);
   if(!col){
-    b.update_vy(store_accel[1]);
+
+    //TEMP
+    b.update_vy(5);
+    //
+    // b.update_vy(store_accel[1]);
   }
   b.erase();
   b.update_px();
@@ -259,11 +268,12 @@ void moveup() {
     p3.draw();
     delay(100);
   }
-  b.stop_x();
   b.stop_y();
+  b.update_vy(2.00);
 }
 
 void setup() {
+  randomSeed(analogRead(A0));
   Serial.begin(9600);
 #ifdef ADAFRUIT_HALLOWING
   tft.initR(INITR_HALLOWING);  // Initialize HalloWing-oriented screen
@@ -276,7 +286,7 @@ void setup() {
   tft.setCursor(30, 0);
   tft.setTextSize(1.1);
   tft.print("Platformers");
-  b.ball_init(64, 64, 4);
+  b.ball_init(10, 0, 4);
   p3.platform_init(68, 126, 60, 2);
   p2.platform_init(38, 86, 60, 2);
   p1.platform_init(0, 46, 60, 2);

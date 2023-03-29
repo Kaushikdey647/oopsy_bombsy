@@ -54,33 +54,14 @@ void setup() {
   Serial.begin(9600);
   adxl345.setup(0.2, 1.00);
   adxl345.calibrate();
-  #ifdef ADAFRUIT_HALLOWING
-    // HalloWing is a special case. It uses a ST7735R display just like the
-    // breakout board, but the orientation and backlight control are different.
-    tft.initR(INITR_HALLOWING);        // Initialize HalloWing-oriented screen
-    pinMode(TFT_BACKLIGHT, OUTPUT);
-    digitalWrite(TFT_BACKLIGHT, HIGH); // Backlight on
-  #else
-    // Use this initializer if using a 1.8" TFT screen:
-    // tft.initR(INITR_BLACKTAB);      // Init ST7735S chip, black tab
-    
-    // OR use this initializer (uncomment) if using a 1.44" TFT:
-    tft.initR(INITR_144GREENTAB); // Init ST7735R chip, green tab
-    
-    // OR use this initializer (uncomment) if using a 0.96" 180x60 TFT:
-    //tft.initR(INITR_MINI160x80);  // Init ST7735S mini display
-    
-    // OR use this initializer (uncomment) if using a 1.54" 240x240 TFT:
-    //tft.init(240, 240);           // Init ST7789 240x240
-
-    // OR use this initializer (uncomment) if using a 2.0" 320x240 TFT:
-    //tft.init(240, 320);           // Init ST7789 320x240
-  
-    // SPI speed defaults to SPI_DEFAULT_FREQ defined in the library, you can override it here
-    // Note that speed allowable depends on chip and quality of wiring, if you go too fast, you
-    // may end up with a black screen some times, or all the time.
-    //tft.setSPISpeed(40000000);
-  #endif
+#ifdef ADAFRUIT_HALLOWING
+  tft.initR(INITR_HALLOWING);  // Initialize HalloWing-oriented screen
+  pinMode(TFT_BACKLIGHT, OUTPUT);
+  digitalWrite(TFT_BACKLIGHT, HIGH);  // Backlight on
+#else
+  tft.initR(INITR_144GREENTAB);  // Init ST7735R chip, green tab
+#endif
+  tft.fillScreen(BG_COLOR);
 }
 
 int ball_x=64;
@@ -117,12 +98,6 @@ void render(){
 }
 
 void loop() {
-	float* vals = adxl345.read();
-	Serial.print("X: ");
-	Serial.print(vals[0]);
-	Serial.print(" Y: ");
-	Serial.print(vals[1]);
-	Serial.print(" Z: ");
-	Serial.println(vals[2]);
+  render();
 	delay(500);
 }
