@@ -57,6 +57,8 @@ public:
         accel_dat[0] = accel_dat[0]/threshold;
         accel_dat[1] = accel_dat[1]/threshold;
         accel_dat[2] = accel_dat[2]/threshold;
+        
+        
         accel_dat[0] = (accel_dat[0] * smoothening_factor) + ((1-smoothening_factor) * accel_dat[0]);
         accel_dat[1] = (accel_dat[1] * smoothening_factor) + ((1-smoothening_factor) * accel_dat[1]);
         accel_dat[2] = (accel_dat[2] * smoothening_factor) + ((1-smoothening_factor) * accel_dat[2]);
@@ -65,7 +67,7 @@ public:
 
     float roll(){
       read();
-      return atan(y/sqrt(pow(accel_dat[0],2)+pow(accel_dat[1],2)))*180/PI;
+      return atan(accel_dat[1]/sqrt(pow(accel_dat[0],2)+pow(accel_dat[1],2)))*180/PI;
     }
 
     float pitch(){

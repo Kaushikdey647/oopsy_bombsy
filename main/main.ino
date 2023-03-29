@@ -1,20 +1,8 @@
-/*
- * This is an example sketch that shows how to toggle the display
- * on and off at runtime to avoid screen burn-in.
- * 
- * The sketch also demonstrates how to erase a previous value by re-drawing the 
- * older value in the screen background color prior to writing a new value in
- * the same location. This avoids the need to call fillScreen() to erase the
- * entire screen followed by a complete redraw of screen contents.
- * 
- * Originally written by Phill Kelley. BSD license.
- * Adapted for ST77xx by Melissa LeBlanc-Williams
- */
-
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <Adafruit_ST7735.h> // Hardware-specific library for ST7735
 #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include <SPI.h>
+#include "accel.h"
 
 #ifdef ADAFRUIT_HALLOWING
   #define TFT_CS        39 // Hallowing display control pins: chip select
@@ -40,26 +28,11 @@
   #define TFT_DC         8
 #endif
 
-#define SerialDebugging true
+//--------------------------------------------------------------------------------------
+//-- Start from here--------------------------------------------------------------------
 
-// OPTION 1 (recommended) is to use the HARDWARE SPI pins, which are unique
-// to each board and not reassignable. For Arduino Uno: MOSI = pin 11 and
-// SCLK = pin 13. This is the fastest mode of operation and is required if
-// using the breakout board's microSD card.
 
-// For 1.44" and 1.8" TFT with ST7735 (including HalloWing) use:
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
-
-// For 1.3", 1.54", and 2.0" TFT with ST7789:
-//Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
-
-// OPTION 2 lets you interface the display using ANY TWO or THREE PINS,
-// tradeoff being that performance is not as fast as hardware SPI above.
-//#define TFT_MOSI 11  // Data out
-//#define TFT_SCLK 13  // Clock out
-//Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
-
-// connect a push button between ground and...
 const uint8_t   Button_pin              = 2;
 
 // color definitions
@@ -76,64 +49,30 @@ const uint16_t  Display_Color_White        = 0xFFFF;
 #define BG_COLOR 0x0000
 #define BALL_COLOR 0xF800
 
+accel adxl345(0x53);
+
 void setup() {
-
-    // button press pulls pin LOW so configure HIGH
-    pinMode(Button_pin,INPUT_PULLUP);
-
-    // use an interrupt to sense when the button is pressed
-
-    #if (SerialDebugging)
-    Serial.begin(115200); while (!Serial); Serial.println();
-    #endif
-
-    // settling time
     delay(250);
-
-    // ignore any power-on-reboot garbage
-   
-
     #ifdef ADAFRUIT_HALLOWING
-      // HalloWing is a special case. It uses a ST7735R display just like the
-      // breakout board, but the orientation and backlight control are different.
       tft.initR(INITR_HALLOWING);        // Initialize HalloWing-oriented screen
       pinMode(TFT_BACKLIGHT, OUTPUT);
       digitalWrite(TFT_BACKLIGHT, HIGH); // Backlight on
     #else
-      // Use this initializer if using a 1.8" TFT screen:
-      // tft.initR(INITR_BLACKTAB);      // Init ST7735S chip, black tab
-    
-      // OR use this initializer (uncomment) if using a 1.44" TFT:
       tft.initR(INITR_144GREENTAB); // Init ST7735R chip, green tab
-    
-      // OR use this initializer (uncomment) if using a 0.96" 180x60 TFT:
-      //tft.initR(INITR_MINI160x80);  // Init ST7735S mini display
-    
-      // OR use this initializer (uncomment) if using a 1.54" 240x240 TFT:
-      //tft.init(240, 240);           // Init ST7789 240x240
-
-      // OR use this initializer (uncomment) if using a 2.0" 320x240 TFT:
-      //tft.init(240, 320);           // Init ST7789 320x240
-  
-      // SPI speed defaults to SPI_DEFAULT_FREQ defined in the library, you can override it here
-      // Note that speed allowable depends on chip and quality of wiring, if you go too fast, you
-      // may end up with a black screen some times, or all the time.
-      //tft.setSPISpeed(40000000);
     #endif
 
-    // initialise the display
+    //------------- initialise the display----------------------------------------------
     tft.fillScreen(BG_COLOR);
-    tft.setCursor(20, 0);
+    tft.setCursor(30, 0);
     tft.setTextSize(1.1);
     tft.print("Platformers");
+
+    Serial.begin(9600);
+    adxl345.setup(0.2, 1.00);
+    adxl345.calibrate();
 }
-
-// int platformsxx[4][4]=[[0,0,0,0],
-//                     [0,0,0,0],
-//                     [0,0,0,0],
-//                     [0,0,0,0]];
-
-int ball_x=10;
+int ball_x=64;
+int ball_y=64;
 int ball_radius=7;
 
 
@@ -142,51 +81,84 @@ int hi=2;
 
 int i = 0;
 
-int ball_y=128-ball_radius-hi;
-
-int change_i = 0;
 
 void platforms(int x, int y,int width, int height, uint16_t color){
   tft.fillRect(x,  y,  width,  height,color);
 }
 
+void render(){
+  
+  float* vals = adxl345.read();
+  float a_x = vals[0];
+  float a_y = vals[1];
+  float a_z = vals[2];
+  Serial.print(a_x);
+  Serial.print(" ");
+  Serial.print(a_y);
+  Serial.print(" ");
+  Serial.println(a_z);
+  //fill circle
+  tft.fillCircle(ball_x,ball_y, ball_radius, BG_COLOR);
+  //update ball position
+  ball_x -= (a_x/20);
+  ball_y += (a_y/20);
+
+  //fill circle
+  tft.fillCircle(ball_x,ball_y, ball_radius, BALL_COLOR);
+  delay(50);
+
+}
+
+void left_jerk(int ball_x,int ball_y,int ball_radius){
+  int movement=8;
+  int prev_x=ball_x;
+  while(movement>0){
+    tft.fillCircle(prev_x,ball_y,ball_radius,BG_COLOR);
+    ball_x=prev_x+movement;
+    movement--;
+    tft.fillCircle(ball_x,ball_y,ball_radius,BALL_COLOR);
+    prev_x=ball_x;
+    delay(100);
+  } 
+   tft.fillCircle(prev_x,ball_y,ball_radius,BG_COLOR);
+}
+
 
 
 void loop() {
-    tft.setTextColor(Display_Color_Black);
-    tft.fillCircle(ball_x,ball_y, ball_radius, BG_COLOR);
-    platforms(0,128-hi-i,wi,hi, Display_Color_Black);
-    platforms(128-wi,128-hi-40-i,wi,hi, Display_Color_Black);
-    platforms(0,128-hi-80-i,wi,hi, Display_Color_Black);
-    if(ball_x>128-ball_radius){
-      ball_x=10;
-    }
-    ball_y+=1;
-    i += (change_i+20)%128;
-
-    if(ball_y>128-hi-80-i+ball_radius){
-      //This is to check if we need the motion or not
-      change_i = 1;
-    }else if (ball_y<128-hi-ball_radius){
-      change_i = 0;  
-    }
-    
-    tft.fillCircle(ball_x,ball_y, ball_radius, BALL_COLOR);
-    
-    platforms(0,128-hi-i,wi,hi, PLATFORM_COLOR);
-    platforms(128-wi,128-hi-40-i,wi,hi, PLATFORM_COLOR);
-    platforms(0,128-hi-80-i,wi,hi, PLATFORM_COLOR);
-
-    // tft.setTextColor(Display_Color_Black);
-    // tft.fillCircle(ball_x,ball_y, ball_radius, BG_COLOR);
-    // if(ball_x>128-ball_radius){
-    //   ball_x=10;
-    // }
-    // ball_x+=1;
-    // i += 1;
-    // tft.fillCircle(ball_x,ball_y, ball_radius, BALL_COLOR);
-    // platforms(0,128-hi,wi,hi, PLATFORM_COLOR);
-    // platforms(128-wi,128-hi-40,wi,hi, PLATFORM_COLOR);
-    // platforms(0,128-hi-80,wi,hi, PLATFORM_COLOR);
-    delay(40);
+//    render();
+//    tft.setTextColor(Display_Color_Black);
+//     tft.fillCircle(ball_x,ball_y, ball_radius, BG_COLOR);
+//     platforms(0,128-hi-i,wi,hi, Display_Color_Black);
+//     platforms(128-wi,128-hi-40-i,wi,hi, Display_Color_Black);
+//     platforms(0,128-hi-80-i,wi,hi, Display_Color_Black);
+//     if(ball_x>128-ball_radius){
+//       ball_x=10;
+//     }
+//     ball_x+=1;
+////     i += 1;
+//     tft.fillCircle(ball_x,ball_y, ball_radius, BALL_COLOR);
+//     platforms(0,128-hi-i,wi,hi, PLATFORM_COLOR);
+//     platforms(128-wi,128-hi-40-i,wi,hi, PLATFORM_COLOR);
+//     platforms(0,128-hi-80-i,wi,hi, PLATFORM_COLOR);
+//
+//     tft.setTextColor(Display_Color_Black);
+//     tft.fillCircle(ball_x,ball_y, ball_radius, BG_COLOR);
+//     if(ball_x>128-ball_radius){
+//       ball_x=10;
+//     }
+//     ball_x+=1;
+////     i += 1;
+//     tft.fillCircle(ball_x,ball_y, ball_radius, BALL_COLOR);
+////    ';'
+//     platforms(0,128-hi,wi,hi, PLATFORM_COLOR);
+//     platforms(128-wi,128-hi-40,wi,hi, PLATFORM_COLOR);
+//     platforms(0,128-hi-80,wi,hi, PLATFORM_COLOR);
+//     float* accl_dat = adxl345.read(); //x, y, z: +ve 90: +255, -ve 90: -255
+//     tft.setCursor(20,60);
+//     char s[20];
+//     fprintf(s,"x: %f,y:%f, z:%f",accl_dat[0],accl_dat[1],accl_dat[2]);
+//     tft.print(s);
+     left_jerk(0,128-10,5);
+     delay(40);
 }

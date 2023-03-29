@@ -65,7 +65,7 @@ public:
 
     float roll(){
       read();
-      return atan(y/sqrt(pow(accel_dat[0],2)+pow(accel_dat[1],2)))*180/PI;
+      return atan(accel_dat[1]/sqrt(pow(accel_dat[0],2)+pow(accel_dat[1],2)))*180/PI;
     }
 
     float pitch(){
