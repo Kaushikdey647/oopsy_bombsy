@@ -1,12 +1,13 @@
-# Oopsy Bombsy
 
-Dr. Round is an astronaut on the ISS in the year 2203. While on a space walk, Dr. Round accidentally dropped a bomb that he held and now the bomb is on its way hurling to hit Earth. 
+![Cover](cover.jpg)
 
-An object when dropped in space can hit the earth with so much force that it releases enough energy to annihilate the earth. 
+*Dr. Round is an astronaut on the ISS in the year 2203. While on a space walk, Dr. Round accidentally dropped a bomb that he held and now the bomb is on its way hurling to hit Earth.* 
 
-Luckily the international space agency had preventive measures just in case such a situation arises. It had a series of rocket powered platforms that help to slow down the speed of the ball before it annihilates the earth. But due to poor maintainance a few of these platforms can trigger the bomb to explode. 
+*An object when dropped in space can hit the earth with so much force that it releases enough energy to annihilate the earth.* 
 
-Can you save the earth by aiding the bomb to fall gracefully?
+*Luckily the international space agency had preventive measures just in case such a situation arises. It had a series of rocket powered platforms that help to slow down the speed of the ball before it annihilates the earth. But due to poor maintainance a few of these platforms can trigger the bomb to explode.* 
+
+#### *Can you save the earth by aiding the bomb to fall gracefully?*
 
 ## Required Devices
 
