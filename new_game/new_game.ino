@@ -293,38 +293,48 @@ int collision() {
   plat_pos = p1.get_pos();
   plat_size = p1.get_size();
   int flag = 0;
+
   if ((ball_pos[1] + rad <= plat_pos[1]) && (ball_pos[1] + rad + ball_vel[1] >= plat_pos[1]) && (ball_pos[0] + rad >= plat_pos[0]) && (ball_pos[0] - rad <= plat_pos[0] + plat_size[0])) {
-    b.erase();
-    b.stop_y();
-    b.update_vy(plat_pos[1] - ball_pos[1] - rad);
-    b.update_py();
-    b.stop_y();
-    Serial.println("C1");
-    flag = 1;
+
+    if(p1.get_color() != PLATFORM_COLOR4){
+      b.erase();
+      b.stop_y();
+      b.update_vy(plat_pos[1] - ball_pos[1] - rad);
+      b.update_py();
+      b.stop_y();
+      Serial.println("C1");
+      flag = 1;
+    }
   }
 
   plat_pos = p2.get_pos();
   plat_size = p2.get_size();
   if ((ball_pos[1] + rad <= plat_pos[1]) && (ball_pos[1] + rad + ball_vel[1] >= plat_pos[1]) && (ball_pos[0] + rad >= plat_pos[0]) && (ball_pos[0] - rad <= plat_pos[0] + plat_size[0])) {
-    b.erase();
-    b.stop_y();
-    b.update_vy(plat_pos[1] - ball_pos[1] - rad);
-    b.update_py();
-    b.stop_y();
-    Serial.println("C2");
-    flag = 2;
+
+    if(p2.get_color() != PLATFORM_COLOR4){
+      b.erase();
+      b.stop_y();
+      b.update_vy(plat_pos[1] - ball_pos[1] - rad);
+      b.update_py();
+      b.stop_y();
+      Serial.println("C2");
+      flag = 2;
+    }
   }
 
   plat_pos = p3.get_pos();
   plat_size = p3.get_size();
   if ((ball_pos[1] + rad <= plat_pos[1]) && (ball_pos[1] + rad + ball_vel[1] >= plat_pos[1]) && (ball_pos[0] + rad >= plat_pos[0]) && (ball_pos[0] - rad <= plat_pos[0] + plat_size[0])) {
-    b.erase();
-    b.stop_y();
-    b.update_vy(plat_pos[1] - ball_pos[1] - rad);
-    b.update_py();
-    b.stop_y();
-    Serial.println("C3");
-    flag = 3;
+
+    if(p3.get_color() != PLATFORM_COLOR4){
+      b.erase();
+      b.stop_y();
+      b.update_vy(plat_pos[1] - ball_pos[1] - rad);
+      b.update_py();
+      b.stop_y();
+      Serial.println("C3");
+      flag = 3;
+    }
   }
 
 
@@ -396,6 +406,9 @@ void render() {
     // b.update_vy(store_accel[1]);
   }
   b.erase();
+  p1.draw();
+  p2.draw();
+  p3.draw();
   b.x_translate(-event.acceleration.x * (min((score / 10) * 0.5 + 1.5, 3)));
   if (!col) {
     b.update_py();
@@ -410,7 +423,20 @@ void moveup() {
   b.stop_y();
   b.update_vy(-5.0);
 
-  if (score > 4) {
+  if (score > 9) {
+    if (random(0, 100) < 30) {
+      p1.set_color(PLATFORM_COLOR4);
+    } else {
+      p1.set_color(PLATFORM_COLOR2);
+    }
+    if (random(0, 100) < 30) {
+      p2.set_color(PLATFORM_COLOR4);
+    } else {
+      p2.set_color(PLATFORM_COLOR2);
+    }
+  }
+
+  else if (score > 4) {
     if (random(0, 100) % 4 > 0) {
       p1.set_color(PLATFORM_COLOR2);
     } else {
@@ -499,12 +525,18 @@ void game_over() {
   sprintf(score_str, "%d", high_score);
   tft.print(score_str);
 
-  delay(3000);
+  delay(2000);
+
+  start_screen();
 
   tft.fillScreen(BG_COLOR);
   tft.setCursor(30, 0);
   tft.setTextSize(1.1);
-  tft.print("Platformers");
+  tft.setTextColor(0xFFFF);
+  tft.print("Oopsy ");
+  tft.setTextColor(BALL_COLOR);
+  tft.print("Bombsy");
+  tft.setTextColor(0xFFFF);
   b.ball_init(10, 0, 4);
   p3.platform_init(68, 116, 60, 2);
   p2.platform_init(38, 83, 60, 2);
@@ -546,7 +578,18 @@ void update_score() {
   tft.print("Score: ");
   sprintf(score_str, "%d", score);
   tft.print(score_str);
-  delay(100);
+  // delay(100);
+}
+
+void start_screen() {
+  tft.fillScreen(BG_COLOR);
+  tft.setCursor(35, 50);
+  tft.setTextSize(2);
+  tft.print("OOPSY");
+  tft.setCursor(30, 70);
+  tft.setTextColor(BALL_COLOR);
+  tft.print("BOMBSY");
+  delay(2000);
 }
 
 void setup() {
@@ -564,11 +607,15 @@ void setup() {
 #else
   tft.initR(INITR_144GREENTAB);  // Init ST7735R chip, green tab
 #endif
+  start_screen();
   tft.fillScreen(BG_COLOR);
-  tft.setCursor(34, 0);
+  tft.setCursor(30, 0);
   tft.setTextSize(1.1);
-  tft.print("Platformers");
-
+  tft.setTextColor(0xFFFF);
+  tft.print("Oopsy ");
+  tft.setTextColor(BALL_COLOR);
+  tft.print("Bombsy");
+  tft.setTextColor(0xFFFF);
   score = 0;
   tft.setCursor(70, 120);
   tft.setTextSize(0.3);
@@ -587,7 +634,7 @@ void setup() {
   p3.draw();
   b.update_vx(1.00);
   b.update_vy(2.00);
-  delay(2000);
+  delay(500);
 }
 // SETUP FUNCTION ENDS HERE
 
