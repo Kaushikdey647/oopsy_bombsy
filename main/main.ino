@@ -462,7 +462,7 @@ int collision() {
       flag = 1;
     }
   }
-
+  
   plat_pos = p2.get_pos();
   plat_size = p2.get_size();
 
