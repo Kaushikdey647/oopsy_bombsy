@@ -550,7 +550,7 @@ void render() {
 
   if (score > 3) {
 
-    //Incase we're going 
+    //Incase we're going for a different platform color
     if (p1.get_color() != PLATFORM_COLOR1) {
       p1.erase();
       p1.update_px();
@@ -568,33 +568,49 @@ void render() {
     }
   }
 
+  //Check for collision
   int col = collision();
-  // b.update_vx(-event.acceleration.x/3);
+
   if (!col) {
 
-    //TEMP
+    //If the ball is not colliding with any platform, update the velocity for free fall
     b.update_vy(5);
-    //
-    // b.update_vy(store_accel[1]);
+
   }
+
+  //Erase previous ball positions and draw the platforms to retain them
   b.erase();
   p1.draw();
   p2.draw();
   p3.draw();
+
+  //Update the position of the ball
   b.x_translate(-event.acceleration.x * (min((score / 10) * 0.5 + 1.5, 3)));
   if (!col) {
     b.update_py();
   }
+
+  //Draw the ball
   b.draw();
   delay(100);
 }
 
 
+/**
+ * @brief When the ball hits the third platform,
+ * The moveup function is called to move the frame up
+ * 
+ */
 void moveup() {
+
+  //Stop the ball from moving
   b.stop_x();
   b.stop_y();
+
+  //Add constant velocity to the ball to move up
   b.update_vy(-5.0);
 
+  //After certain score, add yellow and red platforms.
   if (score > 9) {
     if (random(0, 100) < 30) {
       p1.set_color(PLATFORM_COLOR4);
@@ -622,6 +638,8 @@ void moveup() {
   }
   int start;
   int size;
+
+  //Add spikes to the platforms
   if (score > 3) {
     if (random(0, 100) % 4 > 0) {
       size = min(score, (p1.get_size()[0] * 2) / 3);
@@ -646,8 +664,7 @@ void moveup() {
     p3.set_spike(0, 0);
   }
 
-  // if(score)
-
+  //Move the platforms up
   while (b.get_pos()[1] + b.get_radius() >= 32) {
     p1.erase();
     p2.erase();
@@ -664,9 +681,12 @@ void moveup() {
     p3.draw();
     delay(100);
   }
+
+  //Stop the ball
   b.stop_y();
   b.update_vy(2.00);
 
+  //Interchange the platforms
   platform temp_p;
   temp_p = p2;
   p2 = p1;
@@ -674,8 +694,13 @@ void moveup() {
   p3 = temp_p;
 }
 
+/**
+ * @brief When the ball hits pit bottom or spikes
+ * 
+ */
 void game_over() {
 
+  //Fill the screen with GAME OVER text
   tft.fillScreen(BG_COLOR);
   tft.setCursor(17, 60);
   tft.setTextSize(2);
@@ -691,6 +716,7 @@ void game_over() {
     high_score = score;
   }
 
+  // Display High Score
   tft.setCursor(30, 102);
   tft.setTextSize(1.5);
   tft.print("High Score: ");
@@ -731,6 +757,11 @@ void game_over() {
   delay(2000);
 }
 
+
+/**
+ * @brief Update the score logic
+ * 
+ */
 void update_score() {
   tft.setCursor(70, 120);
   tft.setTextColor(BG_COLOR);
@@ -753,6 +784,11 @@ void update_score() {
   // delay(100);
 }
 
+
+/**
+ * @brief Start screen
+ * 
+ */
 void start_screen() {
   tft.fillScreen(BG_COLOR);
   tft.setCursor(35, 50);
@@ -764,6 +800,12 @@ void start_screen() {
   delay(2000);
 }
 
+
+/**
+ * @brief Main function
+ * 
+ * @return int 
+ */
 void setup() {
   randomSeed(analogRead(A0));
   Serial.begin(9600);
@@ -808,28 +850,25 @@ void setup() {
   b.update_vy(2.00);
   delay(500);
 }
-// SETUP FUNCTION ENDS HERE
 
+/**
+ * @brief Main loop
+ * 
+ */
 void loop() {
-  // put your main code here, to run repeatedly:
+
+  // DETECT COLLISION
   int get_col = collision();
-  // Serial.println("%d", get_col);
+
+  // If collision detected with third platform
   if (get_col == 3) {
-    //This function is called me the ball reaches the bottom of the screen
+    //Move to next frame
     moveup();
   } else if (b.get_pos()[1] + b.get_radius() > 125) {
+    //If ball hits the pit bottom
     game_over();
   } else {
+    // Render next frame
     render();
   }
-  // if(b.get_vel()[1]<0){
-  //   if(b.get_vel()[1]>-2){
-  //     b.update_vy(-b.get_vel()[1]);
-  //   }
-  //   else{
-  //     b.update_vy(-2);
-  //   }
-  // }
-  // b.update_vx(1);
-  // b.update_vy(2);
 }
