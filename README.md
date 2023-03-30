@@ -4,7 +4,7 @@ Dr. Round is an astronaut on the ISS in the year 2203. While on a space walk, Dr
 
 An object when dropped in space can hit the earth with so much force that it releases enough energy to annihilate the earth. 
 
-Luckily the international space agency had preventive measures just in case such a situation arises. It had a series of rocket powered platforms that help to slow down the speed of the ball before it annihilates the earth. but due to poor maintainance a few of these platforms can trigger the bomb to explode. 
+Luckily the international space agency had preventive measures just in case such a situation arises. It had a series of rocket powered platforms that help to slow down the speed of the ball before it annihilates the earth. But due to poor maintainance a few of these platforms can trigger the bomb to explode. 
 
 Can you save the earth by aiding the bomb to fall gracefully?
 
