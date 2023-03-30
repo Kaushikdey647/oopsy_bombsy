@@ -44,7 +44,10 @@ const uint16_t Display_Color_Magenta = 0xF81F;
 const uint16_t Display_Color_Yellow = 0xFFE0;
 const uint16_t Display_Color_White = 0xFFFF;
 
-#define PLATFORM_COLOR 0x07E0
+#define PLATFORM_COLOR1 0x07E0
+#define PLATFORM_COLOR2 0xFFE0
+#define PLATFORM_COLOR3 0xF81F
+#define PLATFORM_COLOR4 0xF800
 #define BG_COLOR 0x0000
 #define BALL_COLOR 0xF800
 
@@ -69,6 +72,9 @@ class platform {
   int* pos;
   int* size;
   int* vel;
+  int color;
+  int spike_begin;
+  int spike_size;
 public:
 
   void platform_init(int x, int y, int w, int h) {
@@ -81,6 +87,22 @@ public:
     size[1] = h;
     vel[0] = -2;
     vel[1] = -5;
+    spike_begin = 0;
+    spike_size = 0;
+    color = PLATFORM_COLOR1;
+  }
+
+  void set_spike(int start, int size) {
+    spike_begin = start;
+    spike_size = size;
+  }
+
+  int get_spike_start() {
+    return pos[0] + spike_begin;
+  }
+
+  int get_spike_end() {
+    return pos[0] + spike_begin + spike_size;
   }
 
   int* get_pos() {
@@ -91,16 +113,25 @@ public:
     return size;
   }
 
-  void update_vx(int val){
-    vel[0]=(val-3)/6+1;
+  int get_color() {
+    return color;
   }
 
-  void update_width(int val){
-    if(val%2==0){
-      size[0]=size[0]-5;
+  void update_vx(int val) {
+    val = random(0, val + 1);
+    vel[0] = (val - 3) / 3 + 1;
+  }
+
+  void update_vx_force(int val) {
+    vel[0] = val;
+  }
+
+  void update_width(int val) {
+    if (val % 2 == 0) {
+      size[0] = size[0] - 5;
     }
-    if(size[0]<=30){
-      size[0]=30;
+    if (size[0] <= 30) {
+      size[0] = 30;
     }
   }
 
@@ -113,19 +144,35 @@ public:
     pos[1] = (pos[1] + vel[1]);
   }
 
-  void update_px(){
-    if(pos[0]<=0 || pos[0]+size[0]>127){
-      vel[0]=-vel[0];
+  void update_px() {
+    if (pos[0] <= 0 || pos[0] + size[0] > 127) {
+      size[0] = size[0] - 5;
+      if (size[0] <= 30) {
+        size[0] = 30;
+      }
+      vel[0] = -vel[0];
     }
-    pos[0]=pos[0]+vel[0];
+    pos[0] = pos[0] + vel[0];
+  }
+
+  void set_color(int val) {
+    color = val;
   }
 
   void draw() {
-    tft.drawRect(pos[0], pos[1], size[0], size[1], PLATFORM_COLOR);
+    tft.drawRect(pos[0], pos[1], size[0], size[1], color);
+    for (int i = 0; i < spike_size && spike_begin + i < size[0]; i += 3) {
+      tft.drawRect(pos[0] + spike_begin + i, pos[1] - 1, 4, 1, 0xF81F);
+      tft.drawRect(pos[0] + spike_begin + i + 1, pos[1] - 2, 2, 1, 0xF81F);
+    }
   }
 
   void erase() {
     tft.drawRect(pos[0], pos[1], size[0], size[1], BG_COLOR);
+    for (int i = 0; i < spike_size && spike_begin + i < size[0]; i += 3) {
+      tft.drawRect(pos[0] + spike_begin + i, pos[1] - 1, 4, 1, BG_COLOR);
+      tft.drawRect(pos[0] + spike_begin + i + 1, pos[1] - 2, 2, 1, BG_COLOR);
+    }
   }
 };
 
@@ -206,7 +253,7 @@ public:
     tft.fillCircle(pos[0], pos[1], radius, BALL_COLOR);
   }
 
-  void bounce_util(int val){
+  void bounce_util(int val) {
     erase();
     y_translate(val);
     draw();
@@ -279,10 +326,35 @@ int collision() {
     Serial.println("C3");
     flag = 3;
   }
-  if (flag > 0 && coll == 0) {
-    coll = 1;
-    update_score();
-    
+
+
+  if (flag > 0) {
+    if (coll == 0) {
+      coll = 1;
+      update_score();
+      // b.bounce();
+    }
+    int start, end;
+    if (flag == 1) {
+      start = p1.get_spike_start();
+      end = p1.get_spike_end();
+      if (ball_pos[0] > start && ball_pos[0] < end) {
+        game_over();
+      }
+    } else if (flag == 2) {
+      start = p2.get_spike_start();
+      end = p2.get_spike_end();
+      if (ball_pos[0] > start && ball_pos[0] < end) {
+        game_over();
+      }
+    } else {
+      start = p3.get_spike_start();
+      end = p3.get_spike_end();
+      if (ball_pos[0] > start && ball_pos[0] < end) {
+        game_over();
+      }
+    }
+
   } else if (flag == 0) {
     coll = 0;
   }
@@ -293,19 +365,25 @@ int collision() {
 void render() {
   sensors_event_t event;
   accel.getEvent(&event);
-  Serial.print("X: ");
-  Serial.println(event.acceleration.x);
+  // Serial.print("X: ");
+  // Serial.println(event.acceleration.x);
 
-  if(score>3){
-    p1.erase();
-    p1.update_px();
-    p1.draw();
-    p2.erase();
-    p2.update_px();
-    p2.draw();
-    p3.erase();
-    p3.update_px();
-    p3.draw();
+  if (score > 3) {
+    if (p1.get_color() != PLATFORM_COLOR1) {
+      p1.erase();
+      p1.update_px();
+      p1.draw();
+    }
+    if (p2.get_color() != PLATFORM_COLOR1) {
+      p2.erase();
+      p2.update_px();
+      p2.draw();
+    }
+    if (p3.get_color() != PLATFORM_COLOR1) {
+      p3.erase();
+      p3.update_px();
+      p3.draw();
+    }
   }
 
   int col = collision();
@@ -318,7 +396,7 @@ void render() {
     // b.update_vy(store_accel[1]);
   }
   b.erase();
-  b.x_translate(-event.acceleration.x);
+  b.x_translate(-event.acceleration.x * (min((score / 10) * 0.5 + 1.5, 3)));
   if (!col) {
     b.update_py();
   }
@@ -331,6 +409,47 @@ void moveup() {
   b.stop_x();
   b.stop_y();
   b.update_vy(-5.0);
+
+  if (score > 4) {
+    if (random(0, 100) % 4 > 0) {
+      p1.set_color(PLATFORM_COLOR2);
+    } else {
+      p1.set_color(PLATFORM_COLOR1);
+    }
+    if (random(0, 100) % 4 < 2) {
+      p2.set_color(PLATFORM_COLOR2);
+    } else {
+      p2.set_color(PLATFORM_COLOR1);
+    }
+  }
+  int start;
+  int size;
+  if (score > 3) {
+    if (random(0, 100) % 4 > 0) {
+      size = min(score, (p1.get_size()[0] * 2) / 3);
+      start = random(0, p1.get_size()[0] - size);
+      p1.set_spike(start, size);
+    }
+    else{
+      p1.set_spike(0, 0);
+    }
+    if (random(0, 100) % 4 < 2) {
+      size = min(score, (p1.get_size()[0] * 2) / 3);
+      start = random(0, p1.get_size()[0] - size);
+      p2.set_spike(start, size);
+    }
+    else{
+      p1.set_spike(0, 0);
+    }
+  }
+  else{
+    p1.set_spike(0, 0);
+    p2.set_spike(0, 0);
+    p3.set_spike(0, 0);
+  }
+
+  // if(score)
+
   while (b.get_pos()[1] + b.get_radius() >= 32) {
     p1.erase();
     p2.erase();
@@ -380,8 +499,6 @@ void game_over() {
   sprintf(score_str, "%d", high_score);
   tft.print(score_str);
 
-
-
   delay(3000);
 
   tft.fillScreen(BG_COLOR);
@@ -422,15 +539,14 @@ void update_score() {
   p1.update_vx(score);
   p2.update_vx(score);
   p3.update_vx(score);
-  p1.update_width(score);
-  p2.update_width(score);
-  p3.update_width(score);
+
   tft.setCursor(70, 120);
   tft.setTextColor(Display_Color_White);
   tft.setTextSize(0.3);
   tft.print("Score: ");
   sprintf(score_str, "%d", score);
   tft.print(score_str);
+  delay(100);
 }
 
 void setup() {
@@ -462,8 +578,8 @@ void setup() {
   coll = 0;
 
   b.ball_init(10, 0, 4);
-  p3.platform_init(random(0,80), 116, 60, 2);
-  p2.platform_init(random(0,80), 83, 60, 2);
+  p3.platform_init(random(0, 80), 116, 60, 2);
+  p2.platform_init(random(0, 80), 83, 60, 2);
   p1.platform_init(0, 42, 60, 2);
   b.draw();
   p1.draw();
@@ -492,7 +608,7 @@ void loop() {
   //     b.update_vy(-b.get_vel()[1]);
   //   }
   //   else{
-  //     b.update_vy(-2);      
+  //     b.update_vy(-2);
   //   }
   // }
   // b.update_vx(1);
