@@ -190,6 +190,7 @@ platform p1;
 platform p2;
 platform p3;
 int score = 0;
+int high_score=0;
 int coll;
 char score_str[4] = { 0 };
 
@@ -304,9 +305,27 @@ void moveup() {
 void game_over() {
 
   tft.fillScreen(BG_COLOR);
-  tft.setCursor(4, 60);
+  tft.setCursor(10, 60);
   tft.setTextSize(2);
   tft.print("GAME OVER");
+  // Your Score
+  tft.setCursor(30, 90);
+  tft.setTextSize(1.2);
+  tft.print("Your Score: ");
+  sprintf(score_str, "%d", score);
+  tft.print(score_str);
+
+  if(score>high_score){
+    high_score=score;
+  }
+
+  tft.setCursor(30, 102);
+  tft.setTextSize(1.5);
+  tft.print("High Score: ");
+  sprintf(score_str, "%d", high_score);
+  tft.print(score_str);
+    
+
 
   delay(3000);
 
