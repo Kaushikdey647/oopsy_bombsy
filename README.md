@@ -35,7 +35,12 @@ This is a platform game where the end goal of the user is to get the bomb as clo
 ## Game Features
 
 #### Ball
+Hero/player of the game. The object has to cross various platforms inorder score points.
 #### Platform
+1. **Green Platform: **
+1. **Yellow Platform: **
+1. **Red Platform: **
+#### Spikes
 #### Complexity
 The game complexity would increase with the **increase in the game score**. The complexity would with indroduced in the following ways:
 1. Increase in the ball sensitivity
@@ -45,7 +50,7 @@ The game complexity would increase with the **increase in the game score**. The 
 5. Introducing spikes on the platform
 ## Scoring system
 
-Score of the game would increase as soon as the hits a particular platform.
+Score of the game would increase by 1 unit as soon as the ball hits a particular platform.
 
 
 
