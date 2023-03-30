@@ -98,11 +98,11 @@ public:
   }
 
   int get_spike_start() {
-    return pos[0]+spike_begin;
+    return pos[0] + spike_begin;
   }
 
   int get_spike_end() {
-    return pos[0]+spike_begin + spike_size;
+    return pos[0] + spike_begin + spike_size;
   }
 
   int* get_pos() {
@@ -328,7 +328,7 @@ int collision() {
   }
 
 
-  if (flag > 0 && coll == 0) {
+  if (flag > 0) {
     if (coll == 0) {
       coll = 1;
       update_score();
@@ -338,20 +338,19 @@ int collision() {
     if (flag == 1) {
       start = p1.get_spike_start();
       end = p1.get_spike_end();
-
-      if (ball_pos[0] >= start && ball_pos[0] <= end) {
+      if (ball_pos[0] > start && ball_pos[0] < end) {
         game_over();
       }
     } else if (flag == 2) {
       start = p2.get_spike_start();
       end = p2.get_spike_end();
-      if (ball_pos[0] >= start && ball_pos[0] <= end) {
+      if (ball_pos[0] > start && ball_pos[0] < end) {
         game_over();
       }
     } else {
       start = p3.get_spike_start();
       end = p3.get_spike_end();
-      if (ball_pos[0] >= start && ball_pos[0] <= end) {
+      if (ball_pos[0] > start && ball_pos[0] < end) {
         game_over();
       }
     }
@@ -366,8 +365,8 @@ int collision() {
 void render() {
   sensors_event_t event;
   accel.getEvent(&event);
-  Serial.print("X: ");
-  Serial.println(event.acceleration.x);
+  // Serial.print("X: ");
+  // Serial.println(event.acceleration.x);
 
   if (score > 3) {
     if (p1.get_color() != PLATFORM_COLOR1) {
@@ -431,11 +430,22 @@ void moveup() {
       start = random(0, p1.get_size()[0] - size);
       p1.set_spike(start, size);
     }
+    else{
+      p1.set_spike(0, 0);
+    }
     if (random(0, 100) % 4 < 2) {
       size = min(score, (p1.get_size()[0] * 2) / 3);
       start = random(0, p1.get_size()[0] - size);
       p2.set_spike(start, size);
     }
+    else{
+      p1.set_spike(0, 0);
+    }
+  }
+  else{
+    p1.set_spike(0, 0);
+    p2.set_spike(0, 0);
+    p3.set_spike(0, 0);
   }
 
   // if(score)
