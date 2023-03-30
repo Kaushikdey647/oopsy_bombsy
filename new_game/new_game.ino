@@ -2,7 +2,9 @@
 #include <Adafruit_ST7735.h>  // Hardware-specific library for ST7735
 #include <Adafruit_ST7789.h>  // Hardware-specific library for ST7789
 #include <SPI.h>
-#include "accel.h"
+#include <Wire.h>
+#include <Adafruit_Sensor.h> 
+#include <Adafruit_ADXL345_U.h>
 
 #ifdef ADAFRUIT_HALLOWING
 #define TFT_CS 39        // Hallowing display control pins: chip select
@@ -126,6 +128,10 @@ public:
     return pos;
   }
 
+  void x_translate(int val){
+    pos[0] += val;        
+  }
+
   int* get_vel() {
     return vel;
   }
@@ -137,7 +143,8 @@ public:
   void update_px() {
     //Bounce Conditions
     if ((pos[0] <= 0 && vel[0] < 0) || (pos[0] >= 127 && vel[0] > 0)) {
-      vel[0] = -vel[0];
+      // vel[0] = -vel[0];
+      vel[0] = 0;
     }
     pos[0] += vel[0];
   }
@@ -145,7 +152,8 @@ public:
   void update_py() {
     //Bounce Conditions
     if ((pos[1] <= 0 && vel[1] < 0) || (pos[1] >= 127 && vel[1] > 0)) {
-      vel[1] = -vel[1];
+      // vel[1] = -vel[1];
+      vel[1] = 0;
     }
     pos[1] += vel[1];
   }
@@ -185,7 +193,7 @@ int score = 0;
 int coll;
 char score_str[4] = { 0 };
 
-accel adxl345(0x53);
+Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified();
 
 int collision() {
   int *ball_pos, *ball_vel, *plat_pos, *plat_size;
@@ -241,11 +249,12 @@ int collision() {
 float* store_accel;
 
 void render() {
-  store_accel = adxl345.read();
-  Serial.println(store_accel[0]);
+  sensors_event_t event; 
+  accel.getEvent(&event);
+  Serial.print("X: "); Serial.println(event.acceleration.x);
 
   bool col = collision();
-  b.update_vx(store_accel[0]);
+  // b.update_vx(-event.acceleration.x/3);
   if (!col) {
 
     //TEMP
@@ -254,7 +263,7 @@ void render() {
     // b.update_vy(store_accel[1]);
   }
   b.erase();
-  b.update_px();
+  b.x_translate(-event.acceleration.x);
   if (!col) {
     b.update_py();
   }
@@ -295,7 +304,7 @@ void moveup() {
 void game_over() {
 
   tft.fillScreen(BG_COLOR);
-  tft.setCursor(60, 60);
+  tft.setCursor(4, 60);
   tft.setTextSize(2);
   tft.print("GAME OVER");
 
@@ -322,8 +331,6 @@ void game_over() {
   tft.print(score_str);
   coll = 0;
 
-  adxl345.setup(0.2, 1.00);
-  adxl345.calibrate();
   b.update_vx(0.00);
   b.update_vy(2.00);
   delay(2000);
@@ -350,13 +357,18 @@ void update_score() {
 void setup() {
   randomSeed(analogRead(A0));
   Serial.begin(9600);
-#ifdef ADAFRUIT_HALLOWING
-  tft.initR(INITR_HALLOWING);  // Initialize HalloWing-oriented screen
-  pinMode(TFT_BACKLIGHT, OUTPUT);
-  digitalWrite(TFT_BACKLIGHT, HIGH);  // Backlight on
-#else
-  tft.initR(INITR_144GREENTAB);  // Init ST7735R chip, green tab
-#endif
+  if(!accel.begin())
+  {
+    Serial.println("No ADXL345 sensor detected.");
+    while(1);
+  }
+  #ifdef ADAFRUIT_HALLOWING
+    tft.initR(INITR_HALLOWING);  // Initialize HalloWing-oriented screen
+    pinMode(TFT_BACKLIGHT, OUTPUT);
+    digitalWrite(TFT_BACKLIGHT, HIGH);  // Backlight on
+  #else
+    tft.initR(INITR_144GREENTAB);  // Init ST7735R chip, green tab
+  #endif
   tft.fillScreen(BG_COLOR);
   tft.setCursor(40, 0);
   tft.setTextSize(1.1);
@@ -378,8 +390,6 @@ void setup() {
   p1.draw();
   p2.draw();
   p3.draw();
-  adxl345.setup(0.2, 1.00);
-  adxl345.calibrate();
   b.update_vx(1.00);
   b.update_vy(2.00);
   delay(2000);
@@ -394,9 +404,9 @@ void loop() {
     //This function is called me the ball reaches the bottom of the screen
     moveup();
   } 
-  // else if (b.get_pos()[1] + b.get_radius() > 125) {
-  //   game_over();
-  // } 
+  else if (b.get_pos()[1] + b.get_radius() > 125) {
+    game_over();
+  } 
   else {
     render();
   }
