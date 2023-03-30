@@ -37,10 +37,15 @@ This is a platform game where the end goal of the user is to get the bomb as clo
 #### Ball
 #### Platform
 #### Complexity
-The game complexity would increase with the **increase in the game score**. 
+The game complexity would increase with the **increase in the game score**. The complexity would with indroduced in the following ways:
+1. Increase in the ball sensitivity
+2. Reducing the plaform size
+3. Increase the platform speed
+4. Introducing the various platforms at random
+5. Introducing spikes on the platform
 ## Scoring system
 
-
+Score of the game would increase as soon as the hits a particular platform.
 
 
 
