@@ -549,6 +549,8 @@ void render() {
   // Serial.println(event.acceleration.x);
 
   if (score > 3) {
+
+    //Incase we're going 
     if (p1.get_color() != PLATFORM_COLOR1) {
       p1.erase();
       p1.update_px();

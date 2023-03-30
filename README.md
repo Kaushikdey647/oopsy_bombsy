@@ -52,20 +52,70 @@ The game complexity would increase with the **increase in the game score**. The 
 3. Increase the platform speed
 4. Introducing the various platforms at random
 5. Introducing spikes on the platform
-## Scoring system
+#### Scoring system
 
 Score of the game would increase by 1 unit as soon as the ball hits a particular platform.
 
-## End of the Game
+#### End of the Game
 
 The game would end when the ball falls out of the screen.
 
+## Code Manual
 
+The code in this repository is divided into the following structure
 
+### Directory Structure
 
+```.
+├── BlockDiagram.jpg
+├── circuit_bb.png
+├── circuit.fzz
+├── main
+│   └── main.ino
+├── README.md
+└── test
+    ├── adxl345_test
+    │   ├── accel.h
+    │   └── adxl345_test.ino
+    ├── anim_test
+    │   └── anim_test.ino
+    └── bounce
+        └── bounce.ino
+```
 
+### Instructions to run the code
 
+- The main code is in the main folder.
+- Open the main.ino file in the arduino IDE.
+- Connect the arduino to the computer.
+- Upload the code to the arduino.
+- Open the serial monitor and set the baud rate to 9600. (OPTIONAL)
+- The game should start on the tft display.
 
+### Files
 
+#### test
 
+- This folder contains the test code for the accelerometer and the tft display.
+- The accelerometer test code is in the adxl345_test folder.
+- The tft display test code is in the anim_test folder.
+- The bounce test code is in the bounce folder.
 
+#### main
+
+- This folder contains the main code for the game.
+- It has all the libraries and headers bundled in the main.ino file.
+
+### Libraries Used
+
+#### Third Party Libraries
+
+- **Adafruit GFX**: This library is used to draw shapes on the tft display.
+- **Adafruit ST7735 and ST7789 Library**: This library is used to control the tft display.
+- **Adafruit BusIO**: This library is used to communicate with the accelerometer.
+- **Adafruit ADXL345**: This library is used to control the accelerometer.
+
+#### General Libraries
+
+- **SPI**: This library is used to communicate with the tft display.
+- **Wire**: This library is used to communicate with the accelerometer.
