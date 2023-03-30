@@ -3,7 +3,7 @@
 #include <Adafruit_ST7789.h>  // Hardware-specific library for ST7789
 #include <SPI.h>
 #include <Wire.h>
-#include <Adafruit_Sensor.h> 
+#include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL345_U.h>
 
 #ifdef ADAFRUIT_HALLOWING
@@ -79,7 +79,7 @@ public:
     pos[1] = y;
     size[0] = w;
     size[1] = h;
-    vel[0] = -5;
+    vel[0] = -2;
     vel[1] = -5;
   }
 
@@ -91,13 +91,33 @@ public:
     return size;
   }
 
+  void update_vx(int val){
+    vel[0]=(val-3)/6+1;
+  }
+
+  void update_width(int val){
+    if(val%2==0){
+      size[0]=size[0]-5;
+    }
+    if(size[0]<=30){
+      size[0]=30;
+    }
+  }
+
   void update_py() {
 
     if (pos[1] < 20) {
       pos[1] = 116;
-      pos[0] = random(0, 127);
+      pos[0] = random(0, 80);
     }
     pos[1] = (pos[1] + vel[1]);
+  }
+
+  void update_px(){
+    if(pos[0]<=0 || pos[0]+size[0]>127){
+      vel[0]=-vel[0];
+    }
+    pos[0]=pos[0]+vel[0];
   }
 
   void draw() {
@@ -128,8 +148,12 @@ public:
     return pos;
   }
 
-  void x_translate(int val){
-    pos[0] += val;        
+  void x_translate(int val) {
+    pos[0] += val;
+  }
+
+  void y_translate(int val) {
+    pos[1] += val;
   }
 
   int* get_vel() {
@@ -181,20 +205,37 @@ public:
   void draw() {
     tft.fillCircle(pos[0], pos[1], radius, BALL_COLOR);
   }
+
+  void bounce_util(int val){
+    erase();
+    y_translate(val);
+    draw();
+    delay(50);
+  }
+
+  void bounce() {
+    bounce_util(-4);
+    bounce_util(-2);
+    bounce_util(-1);
+    bounce_util(1);
+    bounce_util(2);
+    bounce_util(4);
+  }
 };
 
 
 // ------------------------------------------GLOBAL VARIABLE DECLARATION-------------------------------
+Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified();
+
 ball b;
 platform p1;
 platform p2;
 platform p3;
 int score = 0;
-int high_score=0;
+int high_score = 0;
 int coll;
-char score_str[4] = { 0 };
-
-Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified();
+char score_str[5] = { 0 };
+float* store_accel;
 
 int collision() {
   int *ball_pos, *ball_vel, *plat_pos, *plat_size;
@@ -241,20 +282,33 @@ int collision() {
   if (flag > 0 && coll == 0) {
     coll = 1;
     update_score();
+    
   } else if (flag == 0) {
     coll = 0;
   }
   return flag;
 }
 
-float* store_accel;
 
 void render() {
-  sensors_event_t event; 
+  sensors_event_t event;
   accel.getEvent(&event);
-  Serial.print("X: "); Serial.println(event.acceleration.x);
+  Serial.print("X: ");
+  Serial.println(event.acceleration.x);
 
-  bool col = collision();
+  if(score>3){
+    p1.erase();
+    p1.update_px();
+    p1.draw();
+    p2.erase();
+    p2.update_px();
+    p2.draw();
+    p3.erase();
+    p3.update_px();
+    p3.draw();
+  }
+
+  int col = collision();
   // b.update_vx(-event.acceleration.x/3);
   if (!col) {
 
@@ -277,7 +331,7 @@ void moveup() {
   b.stop_x();
   b.stop_y();
   b.update_vy(-5.0);
-  while (b.get_pos()[1] + b.get_radius() >= 42) {
+  while (b.get_pos()[1] + b.get_radius() >= 32) {
     p1.erase();
     p2.erase();
     p3.erase();
@@ -286,6 +340,7 @@ void moveup() {
     p1.update_py();
     p2.update_py();
     p3.update_py();
+
     b.draw();
     p1.draw();
     p2.draw();
@@ -305,7 +360,7 @@ void moveup() {
 void game_over() {
 
   tft.fillScreen(BG_COLOR);
-  tft.setCursor(10, 60);
+  tft.setCursor(17, 60);
   tft.setTextSize(2);
   tft.print("GAME OVER");
   // Your Score
@@ -315,8 +370,8 @@ void game_over() {
   sprintf(score_str, "%d", score);
   tft.print(score_str);
 
-  if(score>high_score){
-    high_score=score;
+  if (score > high_score) {
+    high_score = score;
   }
 
   tft.setCursor(30, 102);
@@ -324,7 +379,7 @@ void game_over() {
   tft.print("High Score: ");
   sprintf(score_str, "%d", high_score);
   tft.print(score_str);
-    
+
 
 
   delay(3000);
@@ -364,7 +419,12 @@ void update_score() {
   tft.print(score_str);
 
   score++;
-
+  p1.update_vx(score);
+  p2.update_vx(score);
+  p3.update_vx(score);
+  p1.update_width(score);
+  p2.update_width(score);
+  p3.update_width(score);
   tft.setCursor(70, 120);
   tft.setTextColor(Display_Color_White);
   tft.setTextSize(0.3);
@@ -376,20 +436,20 @@ void update_score() {
 void setup() {
   randomSeed(analogRead(A0));
   Serial.begin(9600);
-  if(!accel.begin())
-  {
+  if (!accel.begin()) {
     Serial.println("No ADXL345 sensor detected.");
-    while(1);
+    while (1)
+      ;
   }
-  #ifdef ADAFRUIT_HALLOWING
-    tft.initR(INITR_HALLOWING);  // Initialize HalloWing-oriented screen
-    pinMode(TFT_BACKLIGHT, OUTPUT);
-    digitalWrite(TFT_BACKLIGHT, HIGH);  // Backlight on
-  #else
-    tft.initR(INITR_144GREENTAB);  // Init ST7735R chip, green tab
-  #endif
+#ifdef ADAFRUIT_HALLOWING
+  tft.initR(INITR_HALLOWING);  // Initialize HalloWing-oriented screen
+  pinMode(TFT_BACKLIGHT, OUTPUT);
+  digitalWrite(TFT_BACKLIGHT, HIGH);  // Backlight on
+#else
+  tft.initR(INITR_144GREENTAB);  // Init ST7735R chip, green tab
+#endif
   tft.fillScreen(BG_COLOR);
-  tft.setCursor(40, 0);
+  tft.setCursor(34, 0);
   tft.setTextSize(1.1);
   tft.print("Platformers");
 
@@ -402,8 +462,8 @@ void setup() {
   coll = 0;
 
   b.ball_init(10, 0, 4);
-  p3.platform_init(68, 116, 60, 2);
-  p2.platform_init(38, 83, 60, 2);
+  p3.platform_init(random(0,80), 116, 60, 2);
+  p2.platform_init(random(0,80), 83, 60, 2);
   p1.platform_init(0, 42, 60, 2);
   b.draw();
   p1.draw();
@@ -422,13 +482,19 @@ void loop() {
   if (get_col == 3) {
     //This function is called me the ball reaches the bottom of the screen
     moveup();
-  } 
-  else if (b.get_pos()[1] + b.get_radius() > 125) {
+  } else if (b.get_pos()[1] + b.get_radius() > 125) {
     game_over();
-  } 
-  else {
+  } else {
     render();
   }
+  // if(b.get_vel()[1]<0){
+  //   if(b.get_vel()[1]>-2){
+  //     b.update_vy(-b.get_vel()[1]);
+  //   }
+  //   else{
+  //     b.update_vy(-2);      
+  //   }
+  // }
   // b.update_vx(1);
   // b.update_vy(2);
 }
